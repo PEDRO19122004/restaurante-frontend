@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import Login from "./pages/Login";
 
 // URL base do backend FastAPI
 const API = "https://restaurante-bot-production-b7f0.up.railway.app";
@@ -8,6 +9,8 @@ function App() {
 
   // Controla qual página está sendo exibida no painel
   const [pagina, setPagina] = useState("dashboard");
+  const [usuario, setUsuario] = useState(null);
+
 
   // Listas de dados vindos do backend
   const [pedidos, setPedidos] = useState([]);
@@ -27,6 +30,13 @@ function App() {
 
   // Mensagem de feedback para o usuário (some após 3 segundos)
   const [mensagem, setMensagem] = useState("");
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const role  = localStorage.getItem("role");
+    const nome  = localStorage.getItem("nome");
+    if (token) setUsuario({ token, role, nome });
+  }, []);
 
   // ==================== EFEITO INICIAL ====================
 
@@ -153,13 +163,30 @@ function App() {
 
   // ==================== RENDER ====================
 
+  if (!usuario) return <Login onLogin={(data) => setUsuario({ token: data.access_token, role: data.role, nome: data.nome })} />;
+
   return (
       <div className="min-h-screen bg-gray-100">
 
         {/* HEADER */}
         <header className="bg-green-700 text-white px-6 py-4 flex justify-between items-center shadow">
           <h1 className="text-xl font-bold">🍕 Restaurante-Bot | Painel</h1>
-          <span className="text-green-200 text-sm">Atualiza a cada 30s</span>
+          <div className="flex items-center gap-4">
+            <span className="text-green-200 text-sm">
+              Olá, {usuario?.nome} ({usuario?.role})
+            </span>
+            <button
+              onClick={() => {
+                localStorage.removeItem("token");
+                localStorage.removeItem("role");
+                localStorage.removeItem("nome");
+                setUsuario(null);
+              }}
+              className="bg-green-800 hover:bg-green-900 text-white text-sm px-3 py-1 rounded-lg transition"
+            >
+              Sair
+            </button>
+          </div>
         </header>
 
         {/* NAVEGAÇÃO */}
