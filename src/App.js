@@ -8,6 +8,10 @@ function App() {
   // ==================== ESTADOS ====================
 
   // Controla qual página está sendo exibida no painel
+  const getPaginaInicial = (nivel) => {
+    if (nivel === "cozinha" || nivel === "garcom") return "pedidos";
+    return "dashboard";
+  };
   const [pagina, setPagina] = useState("dashboard");
   const [usuario, setUsuario] = useState(null);
 
@@ -35,7 +39,10 @@ function App() {
     const token = localStorage.getItem("token");
     const nivel = localStorage.getItem("nivel");
     const nome  = localStorage.getItem("nome");
-    if (token) setUsuario({ token, nivel, nome });
+    if (token) {
+      setUsuario({ token, nivel, nome });
+      setPagina(getPaginaInicial(nivel));
+    }
   }, []);
 
   // ==================== EFEITO INICIAL ====================
@@ -168,7 +175,13 @@ function App() {
 
   // ==================== RENDER ====================
 
-  if (!usuario) return <Login onLogin={(data) => setUsuario({ token: data.token, nivel: data.nivel, nome: data.nome })} />;
+  if (!usuario) return (
+    <Login onLogin={(data) => {
+      const novoUsuario = { token: data.token, nivel: data.nivel, nome: data.nome };
+      setUsuario(novoUsuario);
+      setPagina(getPaginaInicial(data.nivel));
+    }} />
+  );
 
   return (
       <div className="min-h-screen bg-gray-100">
@@ -196,12 +209,20 @@ function App() {
 
         {/* NAVEGAÇÃO */}
         <nav className="bg-white shadow px-6 py-2 flex gap-4">
-          {[
-            { id: "dashboard", icone: "📊" },
-            { id: "pedidos", icone: "🧾" },
-            { id: "cardapio", icone: "🍽️" },
-            { id: "estoque", icone: "📦" },
-          ].map(({ id, icone }) => (
+          {(() => {
+            const paginasPermitidas = {
+              admin:   ["dashboard", "pedidos", "cardapio", "estoque"],
+              cozinha: ["pedidos"],
+              garcom:  ["pedidos", "cardapio"],
+            };
+            const paginasDoUsuario = [
+              { id: "dashboard", icone: "📊" },
+              { id: "pedidos",   icone: "🧾" },
+              { id: "cardapio",  icone: "🍽️" },
+              { id: "estoque",   icone: "📦" },
+            ].filter(p => (paginasPermitidas[usuario?.nivel] || []).includes(p.id));
+            return paginasDoUsuario;
+          })().map(({ id, icone }) => (
               <button
                   key={id}
                   onClick={() => setPagina(id)}
