@@ -35,6 +35,19 @@ function App() {
   // Mensagem de feedback para o usuário (some após 3 segundos)
   const [mensagem, setMensagem] = useState("");
 
+  // Filtro de pedidos
+  const [filtroPedido, setFiltroPedido] = useState("todos");
+
+  // Busca no cardápio e estoque
+  const [buscaCardapio, setBuscaCardapio] = useState("");
+  const [buscaEstoque, setBuscaEstoque] = useState("");
+
+  // Paginação
+  const [paginaPedidos, setPaginaPedidos] = useState(1);
+  const [paginaCardapio, setPaginaCardapio] = useState(1);
+  const [paginaEstoque, setPaginaEstoque] = useState(1);
+  const ITENS_POR_PAGINA = 10;
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     const nivel = localStorage.getItem("nivel");
@@ -173,6 +186,65 @@ function App() {
       .reduce((total, p) => total + (p.total || 0), 0);
   const pedidosAtivos = pedidos.filter((p) => p.status !== "entregue").length;
 
+  // Pedidos filtrados por status
+  const pedidosFiltrados = filtroPedido === "todos"
+    ? pedidos
+    : pedidos.filter(p => p.status === filtroPedido);
+
+  // Paginação dos pedidos
+  const totalPaginasPedidos = Math.ceil(pedidosFiltrados.length / ITENS_POR_PAGINA);
+  const pedidosPaginados = pedidosFiltrados.slice(
+    (paginaPedidos - 1) * ITENS_POR_PAGINA,
+    paginaPedidos * ITENS_POR_PAGINA
+  );
+
+  // Cardápio filtrado por busca
+  const cardapioFiltrado = cardapio.filter(p =>
+    p.nome.toLowerCase().includes(buscaCardapio.toLowerCase())
+  );
+  const totalPaginasCardapio = Math.ceil(cardapioFiltrado.length / ITENS_POR_PAGINA);
+  const cardapioPaginado = cardapioFiltrado.slice(
+    (paginaCardapio - 1) * ITENS_POR_PAGINA,
+    paginaCardapio * ITENS_POR_PAGINA
+  );
+
+  // Estoque filtrado por busca
+  const estoqueFiltrado = estoque.filter(i =>
+    i.nome.toLowerCase().includes(buscaEstoque.toLowerCase())
+  );
+  const totalPaginasEstoque = Math.ceil(estoqueFiltrado.length / ITENS_POR_PAGINA);
+  const estoquePaginado = estoqueFiltrado.slice(
+    (paginaEstoque - 1) * ITENS_POR_PAGINA,
+    paginaEstoque * ITENS_POR_PAGINA
+  );
+
+  function Paginacao({ paginaAtual, totalPaginas, onChange }) {
+    if (totalPaginas <= 1) return null;
+    return (
+      <div className="flex items-center justify-between mt-4">
+        <span className="text-sm text-gray-500">
+          Página {paginaAtual} de {totalPaginas}
+        </span>
+        <div className="flex gap-2">
+          <button
+            onClick={() => onChange(paginaAtual - 1)}
+            disabled={paginaAtual === 1}
+            className="px-3 py-1 rounded-lg border text-sm disabled:opacity-40 hover:bg-gray-100"
+          >
+            ← Anterior
+          </button>
+          <button
+            onClick={() => onChange(paginaAtual + 1)}
+            disabled={paginaAtual === totalPaginas}
+            className="px-3 py-1 rounded-lg border text-sm disabled:opacity-40 hover:bg-gray-100"
+          >
+            Próxima →
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // ==================== RENDER ====================
 
   if (!usuario) return (
@@ -291,57 +363,84 @@ function App() {
 
           {/* ===== PEDIDOS ===== */}
           {pagina === "pedidos" && (
-              <div>
-                <h2 className="text-xl font-bold text-gray-700 mb-4">Pedidos</h2>
-                <div className="bg-white rounded-xl shadow overflow-hidden">
-                  <table className="w-full">
-                    <thead className="bg-gray-50 border-b">
-                    <tr>
-                      {["#", "Mesa", "Itens", "Total", "Status", "Ação"].map((h) => (
-                          <th key={h} className="text-left px-4 py-3 text-gray-600 text-sm">{h}</th>
-                      ))}
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {pedidos.length === 0 ? (
-                        <tr><td colSpan={6} className="text-center text-gray-400 py-8">Nenhum pedido encontrado.</td></tr>
-                    ) : (
-                        pedidos.map((pedido) => (
-                            <tr key={pedido.id} className="border-b hover:bg-gray-50">
-                              <td className="px-4 py-3 text-gray-500">#{pedido.id}</td>
-                              <td className="px-4 py-3 font-medium">Mesa {pedido.mesa_id}</td>
-                              <td className="px-4 py-3 text-gray-600 text-sm">{pedido.itens}</td>
-                              <td className="px-4 py-3 font-medium text-green-700">
-                                R$ {Number(pedido.total || 0).toFixed(2)}
-                              </td>
-                              <td className="px-4 py-3">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${corStatus(pedido.status)}`}>
-                            {pedido.status}
-                          </span>
-                              </td>
-                              <td className="px-4 py-3">
-                                {proximoStatus(pedido.status) && (
-                                    <button
-                                        onClick={() => atualizarStatus(pedido.id, proximoStatus(pedido.status))}
-                                        className="bg-green-700 text-white text-xs px-3 py-1 rounded-lg hover:bg-green-800 transition"
-                                    >
-                                      → {proximoStatus(pedido.status)}
-                                    </button>
-                                )}
-                              </td>
-                            </tr>
-                        ))
-                    )}
-                    </tbody>
-                  </table>
+            <div>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold text-gray-700">Pedidos</h2>
+                <div className="flex gap-2">
+                  {["todos", "recebido", "em preparo", "pronto", "entregue"].map(s => (
+                    <button
+                      key={s}
+                      onClick={() => { setFiltroPedido(s); setPaginaPedidos(1); }}
+                      className={`px-3 py-1 rounded-lg text-sm font-medium capitalize transition ${
+                        filtroPedido === s
+                          ? "bg-green-700 text-white"
+                          : "bg-white border text-gray-600 hover:bg-gray-50"
+                      }`}
+                    >
+                      {s === "todos" ? `Todos (${pedidos.length})` : s}
+                    </button>
+                  ))}
                 </div>
               </div>
+              <div className="bg-white rounded-xl shadow overflow-hidden">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b">
+                    <tr>
+                      {["#", "Mesa", "Itens", "Total", "Status", "Ação"].map((h) => (
+                        <th key={h} className="text-left px-4 py-3 text-gray-600 text-sm">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pedidosPaginados.length === 0 ? (
+                      <tr><td colSpan={6} className="text-center text-gray-400 py-8">Nenhum pedido encontrado.</td></tr>
+                    ) : (
+                      pedidosPaginados.map((pedido) => (
+                        <tr key={pedido.id} className="border-b hover:bg-gray-50">
+                          <td className="px-4 py-3 text-gray-500">#{pedido.id}</td>
+                          <td className="px-4 py-3 font-medium">Mesa {pedido.mesa_id}</td>
+                          <td className="px-4 py-3 text-gray-600 text-sm">{pedido.itens}</td>
+                          <td className="px-4 py-3 font-medium text-green-700">
+                            R$ {Number(pedido.total || 0).toFixed(2)}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${corStatus(pedido.status)}`}>
+                              {pedido.status}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            {proximoStatus(pedido.status) && (
+                              <button
+                                onClick={() => atualizarStatus(pedido.id, proximoStatus(pedido.status))}
+                                className="bg-green-700 text-white text-xs px-3 py-1 rounded-lg hover:bg-green-800 transition"
+                              >
+                                → {proximoStatus(pedido.status)}
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              <Paginacao paginaAtual={paginaPedidos} totalPaginas={totalPaginasPedidos} onChange={setPaginaPedidos} />
+            </div>
           )}
 
           {/* ===== CARDÁPIO ===== */}
           {pagina === "cardapio" && (
               <div>
-                <h2 className="text-xl font-bold text-gray-700 mb-4">Cardápio</h2>
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-bold text-gray-700">Cardápio</h2>
+                  <input
+                    type="text"
+                    placeholder="🔍 Buscar prato..."
+                    value={buscaCardapio}
+                    onChange={e => { setBuscaCardapio(e.target.value); setPaginaCardapio(1); }}
+                    className="border rounded-lg px-3 py-2 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  />
+                </div>
                 <div className="bg-white rounded-xl shadow p-6 mb-6">
                   <h3 className="font-bold text-gray-700 mb-4">Adicionar novo prato</h3>
                   <form onSubmit={adicionarPrato} className="flex gap-4 flex-wrap">
@@ -361,10 +460,10 @@ function App() {
                   </form>
                 </div>
                 <div className="grid grid-cols-3 gap-4">
-                  {cardapio.length === 0 ? (
+                  {cardapioPaginado.length === 0 ? (
                       <p className="text-gray-400 col-span-3">Nenhum prato cadastrado.</p>
                   ) : (
-                      cardapio.map((prato) => (
+                      cardapioPaginado.map((prato) => (
                           <div key={prato.id} className="bg-white rounded-xl shadow p-4">
                             <div className="flex justify-between items-start">
                               <h3 className="font-bold text-gray-800">{prato.nome}</h3>
@@ -381,13 +480,23 @@ function App() {
                       ))
                   )}
                 </div>
+                <Paginacao paginaAtual={paginaCardapio} totalPaginas={totalPaginasCardapio} onChange={setPaginaCardapio} />
               </div>
           )}
 
           {/* ===== ESTOQUE ===== */}
           {pagina === "estoque" && (
               <div>
-                <h2 className="text-xl font-bold text-gray-700 mb-4">Estoque</h2>
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-bold text-gray-700">Estoque</h2>
+                  <input
+                    type="text"
+                    placeholder="🔍 Buscar ingrediente..."
+                    value={buscaEstoque}
+                    onChange={e => { setBuscaEstoque(e.target.value); setPaginaEstoque(1); }}
+                    className="border rounded-lg px-3 py-2 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  />
+                </div>
                 <div className="bg-white rounded-xl shadow p-6 mb-6">
                   <h3 className="font-bold text-gray-700 mb-4">Adicionar ingrediente</h3>
                   <form onSubmit={adicionarIngrediente} className="flex gap-4 flex-wrap">
@@ -420,10 +529,10 @@ function App() {
                     </tr>
                     </thead>
                     <tbody>
-                    {estoque.length === 0 ? (
+                    {estoquePaginado.length === 0 ? (
                         <tr><td colSpan={5} className="text-center text-gray-400 py-8">Nenhum ingrediente cadastrado.</td></tr>
                     ) : (
-                        estoque.map((item) => {
+                        estoquePaginado.map((item) => {
                           const baixo = item.quantidade <= 5;
                           return (
                               <tr key={item.id} className={`border-b ${baixo ? "bg-red-50" : "hover:bg-gray-50"}`}>
@@ -444,6 +553,7 @@ function App() {
                     </tbody>
                   </table>
                 </div>
+                <Paginacao paginaAtual={paginaEstoque} totalPaginas={totalPaginasEstoque} onChange={setPaginaEstoque} />
               </div>
           )}
 
