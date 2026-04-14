@@ -64,15 +64,11 @@ function App() {
   // ==================== EFEITO INICIAL ====================
 
   useEffect(() => {
-    // Busca os dados imediatamente quando o painel abre
+    if (!usuario || !usuario.token || usuario.token === 'undefined') return;
     buscarDados();
-
-    // Atualização automática a cada 30 segundos
     const intervalo = setInterval(buscarDados, 30000);
-
-    // Limpeza: cancela o intervalo quando o componente sai da tela
     return () => clearInterval(intervalo);
-  }, []); // [] = executa só uma vez ao carregar
+  }, [usuario]);
 
   // ==================== FUNÇÕES ====================
 
