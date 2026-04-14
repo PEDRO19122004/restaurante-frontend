@@ -10,22 +10,25 @@ export default function Login({ onLogin }) {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    setErro("");
+    setErro('');
     setLoading(true);
     try {
       const res = await fetch(`${API}/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, senha }),
       });
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.detail || "Erro ao fazer login");
+        const d = await res.json();
+        throw new Error(d.detail || 'Erro ao fazer login');
       }
       const data = await res.json();
-      localStorage.setItem("token", data.access_token);
-      localStorage.setItem("role", data.role);
-      localStorage.setItem("nome", data.nome);
+      console.log('Resposta do login:', data);
+      // Backend retorna: { token, nome, nivel, mensagem }
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('nivel', data.nivel);
+      localStorage.setItem('nome',  data.nome);
+      console.log('Token salvo:', localStorage.getItem('token'));
       onLogin(data);
     } catch (err) {
       setErro(err.message);
