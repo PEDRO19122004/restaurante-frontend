@@ -33,9 +33,9 @@ function App() {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    const role  = localStorage.getItem("role");
+    const nivel = localStorage.getItem("nivel");
     const nome  = localStorage.getItem("nome");
-    if (token) setUsuario({ token, role, nome });
+    if (token) setUsuario({ token, nivel, nome });
   }, []);
 
   // ==================== EFEITO INICIAL ====================
@@ -54,15 +54,15 @@ function App() {
   // ==================== FUNÇÕES ====================
 
   async function buscarDados() {
+    const token = localStorage.getItem("token");
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
     try {
-      // Promise.all faz as 4 requisições ao mesmo tempo (mais rápido)
       const [p, c, e, a] = await Promise.all([
-        fetch(`${API}/pedidos/`).then((r) => r.json()),
-        fetch(`${API}/cardapio/`).then((r) => r.json()),
-        fetch(`${API}/estoque/`).then((r) => r.json()),
-        fetch(`${API}/estoque/alerta`).then((r) => r.json()),
+        fetch(`${API}/pedidos/`, { headers }).then((r) => r.json()),
+        fetch(`${API}/cardapio/`, { headers }).then((r) => r.json()),
+        fetch(`${API}/estoque/`, { headers }).then((r) => r.json()),
+        fetch(`${API}/estoque/alerta`, { headers }).then((r) => r.json()),
       ]);
-      // Array.isArray evita erro se o backend retornar algo inesperado
       setPedidos(Array.isArray(p) ? p : []);
       setCardapio(Array.isArray(c) ? c : []);
       setEstoque(Array.isArray(e) ? e : []);
@@ -78,9 +78,11 @@ function App() {
   }
 
   async function atualizarStatus(pedidoId, novoStatus) {
+    const token = localStorage.getItem("token");
     try {
       await fetch(`${API}/pedidos/${pedidoId}/status?status=${novoStatus}`, {
         method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
       });
       mostrarMensagem(`Pedido #${pedidoId} → ${novoStatus}`);
       buscarDados();
@@ -95,10 +97,11 @@ function App() {
       mostrarMensagem("Preencha o nome e o preço.");
       return;
     }
+    const token = localStorage.getItem("token");
     try {
       await fetch(
           `${API}/cardapio/?nome=${nomePrato}&descricao=${descPrato}&preco=${precoPrato}`,
-          { method: "POST" }
+          { method: "POST", headers: { Authorization: `Bearer ${token}` } }
       );
       setNomePrato(""); setDescPrato(""); setPrecoPrato("");
       mostrarMensagem(`"${nomePrato}" adicionado ao cardápio!`);
@@ -110,8 +113,9 @@ function App() {
 
   async function deletarPrato(id, nome) {
     if (!window.confirm(`Deletar "${nome}"?`)) return;
+    const token = localStorage.getItem("token");
     try {
-      await fetch(`${API}/cardapio/${id}`, { method: "DELETE" });
+      await fetch(`${API}/cardapio/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
       mostrarMensagem(`"${nome}" removido do cardápio.`);
       buscarDados();
     } catch {
@@ -125,10 +129,11 @@ function App() {
       mostrarMensagem("Preencha o nome e a quantidade.");
       return;
     }
+    const token = localStorage.getItem("token");
     try {
       await fetch(
           `${API}/estoque/?nome=${nomeIngrediente}&quantidade=${qtdIngrediente}&unidade=${unidadeIngrediente}`,
-          { method: "POST" }
+          { method: "POST", headers: { Authorization: `Bearer ${token}` } }
       );
       setNomeIngrediente(""); setQtdIngrediente(""); setUnidadeIngrediente("kg");
       mostrarMensagem(`"${nomeIngrediente}" adicionado ao estoque!`);
@@ -163,7 +168,7 @@ function App() {
 
   // ==================== RENDER ====================
 
-  if (!usuario) return <Login onLogin={(data) => setUsuario({ token: data.access_token, role: data.role, nome: data.nome })} />;
+  if (!usuario) return <Login onLogin={(data) => setUsuario({ token: data.token, nivel: data.nivel, nome: data.nome })} />;
 
   return (
       <div className="min-h-screen bg-gray-100">
@@ -173,12 +178,12 @@ function App() {
           <h1 className="text-xl font-bold">🍕 Restaurante-Bot | Painel</h1>
           <div className="flex items-center gap-4">
             <span className="text-green-200 text-sm">
-              Olá, {usuario?.nome} ({usuario?.role})
+              Olá, {usuario?.nome} ({usuario?.nivel})
             </span>
             <button
               onClick={() => {
                 localStorage.removeItem("token");
-                localStorage.removeItem("role");
+                localStorage.removeItem("nivel");
                 localStorage.removeItem("nome");
                 setUsuario(null);
               }}
