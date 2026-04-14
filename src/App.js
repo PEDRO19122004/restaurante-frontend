@@ -78,13 +78,30 @@ function App() {
 
   async function buscarDados() {
     const token = localStorage.getItem("token");
-    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    if (!token) {
+      console.log("Token não encontrado no localStorage");
+      return;
+    }
+    const headers = { Authorization: `Bearer ${token}` };
+    console.log("Token sendo enviado:", token.substring(0, 20) + "...");
     try {
       const [p, c, e, a] = await Promise.all([
-        fetch(`${API}/pedidos/`, { headers }).then((r) => r.json()),
-        fetch(`${API}/cardapio/`, { headers }).then((r) => r.json()),
-        fetch(`${API}/estoque/`, { headers }).then((r) => r.json()),
-        fetch(`${API}/estoque/alerta`, { headers }).then((r) => r.json()),
+        fetch(`${API}/pedidos/`, { headers }).then((r) => {
+          console.log("Pedidos status:", r.status);
+          return r.json();
+        }),
+        fetch(`${API}/cardapio/`, { headers }).then((r) => {
+          console.log("Cardapio status:", r.status);
+          return r.json();
+        }),
+        fetch(`${API}/estoque/`, { headers }).then((r) => {
+          console.log("Estoque status:", r.status);
+          return r.json();
+        }),
+        fetch(`${API}/estoque/alerta`, { headers }).then((r) => {
+          console.log("Alerta status:", r.status);
+          return r.json();
+        }),
       ]);
       setPedidos(Array.isArray(p) ? p : []);
       setCardapio(Array.isArray(c) ? c : []);
