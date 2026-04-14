@@ -50,9 +50,12 @@ function App() {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    const nivel = localStorage.getItem("nivel");
+    const nivel = localStorage.getItem("nivel") || localStorage.getItem("role") || "admin";
     const nome  = localStorage.getItem("nome");
     if (token) {
+      // Garante que o localStorage sempre tem "nivel" salvo corretamente
+      localStorage.setItem("nivel", nivel);
+      localStorage.removeItem("role");
       setUsuario({ token, nivel, nome });
       setPagina(getPaginaInicial(nivel));
     }
