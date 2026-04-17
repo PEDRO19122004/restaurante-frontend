@@ -17,7 +17,7 @@ export default function Login({ onLogin }) {
       formData.append("password", senha);
 
       const res = await fetch(
-          "https://restaurante-bot-production-b7f0.up.railway.app/token",
+          "https://restaurante-bot-production-b7f0.up.railway.app/auth/login",
           { method: "POST", body: formData }
       );
 
