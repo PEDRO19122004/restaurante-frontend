@@ -313,9 +313,6 @@ function App() {
   const cardapioPag = cardapioFiltrado.slice((paginaCardapio - 1) * ITENS, paginaCardapio * ITENS);
 
   const estoqueFiltrado = estoque.filter(i => i.nome.toLowerCase().includes(buscaEstoque.toLowerCase()));
-  const totalPE = Math.ceil(estoqueFiltrado.length / ITENS);
-  const estoquePag = estoqueFiltrado.slice((paginaEstoque - 1) * ITENS, paginaEstoque * ITENS);
-
   const paginasPermitidas = {
     admin:   ["dashboard","pedidos","cardapio","estoque"],
     cozinha: ["pedidos"],
