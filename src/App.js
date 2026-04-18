@@ -339,13 +339,10 @@ function App() {
     return (
         <>
           <GlobalStyles />
-          <Login onLogin={(data) => {
-            const nivel = data.nivel || "admin";
-            const token = data.token;
-            const nome = data.nome;
+          <Login onLogin={(token, nivel) => {
+            const nome = localStorage.getItem("nome") || "";
             localStorage.setItem("token", token);
             localStorage.setItem("nivel", nivel);
-            localStorage.setItem("nome", nome);
             setUsuario({ token, nivel, nome });
             setPagina(getPaginaInicial(nivel));
           }} />
