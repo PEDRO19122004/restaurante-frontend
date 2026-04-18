@@ -27,9 +27,9 @@ export default function Login({ onLogin }) {
       }
 
       const data = await res.json();
-      localStorage.setItem("token", data.access_token);
-      localStorage.setItem("nivel", data.nivel || "admin");
-      onLogin(data.access_token, data.nivel || "admin");
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("nivel", data.nivel);
+      onLogin(data.token, data.nivel);
     } catch (err) {
       setErro(err.message);
     } finally {
