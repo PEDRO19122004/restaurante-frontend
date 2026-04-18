@@ -12,13 +12,13 @@ export default function Login({ onLogin }) {
     setCarregando(true);
 
     try {
-      const formData = new FormData();
-      formData.append("username", email);
-      formData.append("password", senha);
-
       const res = await fetch(
           "https://restaurante-bot-production-b7f0.up.railway.app/auth/login",
-          { method: "POST", body: formData }
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: email, senha: senha }),
+          }
       );
 
       if (!res.ok) {
